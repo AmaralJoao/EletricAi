@@ -12,6 +12,15 @@ const API_CONFIG = {
       NOVA: '/auth/api/localizacao/novalocalizacao',
       LISTAR: '/auth/api/localizacao/listarlocalizacao',
       EDITAR: '/auth/api/localizacao/editarlocalizacao'
+    },
+    DISPOSITIVO: {
+      LISTAR: '/auth/api/dispositivo/dispositivos',
+      VINCULAR: '/auth/api/dispositivo/vincular'
+    },
+    LOCALIZACAO_DISPOSITIVO: {
+      CADASTRAR: '/auth/api/localizacaodispositivo/cadastrar',
+      EDITAR: '/auth/api/localizacaodispositivo/editar',
+      LISTAR: '/auth/api/localizacaodispositivo/listar'
     }
   },
   

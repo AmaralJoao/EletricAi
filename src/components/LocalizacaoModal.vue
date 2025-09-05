@@ -199,7 +199,7 @@
 </template>
 
 <script>
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { useLocalizacoesStore } from '../stores/localizacoes'
 
 export default {
@@ -217,6 +217,7 @@ export default {
   emits: ['close', 'save'],
   setup(props, { emit }) {
     const localizacoesStore = useLocalizacoesStore()
+    const isEditingComputed = computed(() => props.isEditing)
 
     // Estado do formulário
     const form = reactive({
@@ -339,7 +340,7 @@ export default {
         cep: form.cep,
         cidade: form.cidade.trim(),
         nomeDaRua: form.nomeDaRua.trim(),
-        numero: isEditing.value ? parseInt(form.numero) : form.numero, // String para criação, int para edição
+        numero: isEditingComputed.value ? parseInt(form.numero) : form.numero, // String para criação, int para edição
         complemento: form.complemento.trim() || null,
         status: form.status
       }
@@ -358,7 +359,7 @@ export default {
     return {
       form,
       errors,
-      isEditing,
+      isEditing: isEditingComputed,
       localizacoesStore,
       formatarCep,
       buscarCep,

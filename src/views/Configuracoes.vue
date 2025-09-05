@@ -55,6 +55,16 @@
                   Sistema
                 </button>
               </li>
+              <li class="nav-item">
+                <button 
+                  @click="activeTab = 'dispositivos'"
+                  :class="{ 'active': activeTab === 'dispositivos' }"
+                  class="nav-button"
+                >
+                  <span class="nav-icon">🔌</span>
+                  Meus Dispositivos
+                </button>
+              </li>
             </ul>
           </nav>
         </aside>
@@ -149,6 +159,133 @@
             </div>
           </div>
 
+          <!-- Painel de Dispositivos -->
+          <div v-else-if="activeTab === 'dispositivos'" class="panel-content">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <span class="title-icon">🔌</span>
+                Meus Dispositivos
+              </h2>
+              <div class="panel-actions" v-if="!showVincular">
+                <button class="btn-primary" @click="showVincular = true">
+                  <span class="btn-icon">➕</span>
+                  Novo Dispositivo
+                </button>
+              </div>
+            </div>
+
+            <div class="dispositivos-actions">
+              <!-- Modal de vinculação de Chip ID -->
+              <div v-if="showVincular" class="chip-modal-overlay" @click="cancelarVinculo">
+                <div class="chip-modal-container" @click.stop>
+                  <div class="chip-modal-header">
+                    <h3 class="chip-modal-title">
+                      <span class="title-icon">🔗</span>
+                      Vincular Dispositivo
+                    </h3>
+                    <button @click="cancelarVinculo" class="close-button">
+                      <span class="close-icon">✕</span>
+                    </button>
+                  </div>
+                  <form @submit.prevent="handleVincular" class="chip-modal-form">
+                    <label class="form-label" for="chipIdInput">
+                      <span class="label-icon">🧩</span>
+                      Chip ID
+                    </label>
+                    <div class="input-container">
+                      <input
+                        id="chipIdInput"
+                        v-model="chipId"
+                        type="text"
+                        placeholder="Informe o Chip ID"
+                        class="form-input"
+                        required
+                        autofocus
+                      />
+                      <div class="input-glow"></div>
+                    </div>
+                    <div class="chip-modal-actions">
+                      <button type="button" class="btn-secondary" @click="cancelarVinculo" :disabled="dispositivosStore.isLoading">
+                        Cancelar
+                      </button>
+                      <button type="submit" class="btn-primary" :disabled="dispositivosStore.isLoading">
+                        Vincular
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div v-if="dispositivosStore.hasError" class="error-alert">
+                <div class="error-icon">⚠️</div>
+                <span>{{ dispositivosStore.error }}</span>
+              </div>
+            </div>
+
+            <div class="localizacoes-container">
+              <div v-if="dispositivosStore.isLoading" class="loading-container">
+                <div class="loading-spinner">
+                  <div class="spinner"></div>
+                  <span>Carregando dispositivos...</span>
+                </div>
+              </div>
+
+              <div v-else-if="dispositivosStore.dispositivos.length === 0" class="empty-state">
+                <div class="empty-icon">🔌</div>
+                <h3>Nenhum dispositivo encontrado</h3>
+                <p>Vincule seu primeiro dispositivo usando o Chip ID</p>
+              </div>
+
+              <div v-else class="localizacoes-grid">
+                <div 
+                  v-for="(disp, idx) in dispositivosStore.dispositivos" 
+                  :key="disp.nomeDoDispositivo || idx"
+                  class="localizacao-card"
+                >
+                  <div class="card-header">
+                    <h3 class="localizacao-nome">{{ disp.nomeDoDispositivo }}</h3>
+                    <div class="card-actions">
+                      <button 
+                        @click="editarLocalizacaoDispositivo(disp)"
+                        class="btn-edit"
+                        title="Editar localização do dispositivo"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="endereco-info">
+                      <div class="endereco-item">
+                        <span class="endereco-label">Modelo:</span>
+                        <span class="endereco-value">{{ disp.modeloDispositivo }}</span>
+                      </div>
+                      <div class="endereco-item">
+                        <span class="endereco-label">Versão:</span>
+                        <span class="endereco-value">{{ disp.versaoDoDispositivo }}</span>
+                      </div>
+                      <div class="endereco-item" v-if="disp.nomeDaLocalizacaoDoDispositivo">
+                        <span class="endereco-label">Localização:</span>
+                        <span class="endereco-value">{{ disp.nomeDaLocalizacaoDoDispositivo }}</span>
+                      </div>
+                      <div class="endereco-item">
+                        <span class="endereco-label">Endereço:</span>
+                        <span class="endereco-value">
+                          {{ disp.nomeDaRua }}, {{ disp.numero }}
+                          <template v-if="disp.complemento"> - {{ disp.complemento }}</template>
+                        </span>
+                      </div>
+                      <div class="endereco-item">
+                        <span class="endereco-label">Cidade:</span>
+                        <span class="endereco-value">{{ disp.cidade }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Outros painéis (placeholder) -->
           <div v-else-if="activeTab === 'usuarios'" class="panel-content">
             <div class="panel-header">
@@ -189,6 +326,16 @@
       @close="fecharModal"
       @save="salvarLocalizacao"
     />
+
+    <!-- Modal para Localização do Dispositivo -->
+    <DispositivoLocalizacaoModal 
+      v-if="showDispositivoLocalizacaoModal"
+      :dispositivo="dispositivoEditando"
+      :isEditing="isEditingDispositivoLocalizacao"
+      :localizacaoDispositivo="localizacaoDispositivoEditando"
+      @close="fecharDispositivoLocalizacaoModal"
+      @save="salvarLocalizacaoDispositivo"
+    />
   </div>
 </template>
 
@@ -197,27 +344,39 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useLocalizacoesStore } from '../stores/localizacoes'
+import { useDispositivosStore } from '../stores/dispositivos'
 import LocalizacaoModal from '../components/LocalizacaoModal.vue'
+import DispositivoLocalizacaoModal from '../components/DispositivoLocalizacaoModal.vue'
 
 export default {
   name: 'Configuracoes',
   components: {
-    LocalizacaoModal
+    LocalizacaoModal,
+    DispositivoLocalizacaoModal
   },
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
     const localizacoesStore = useLocalizacoesStore()
+    const dispositivosStore = useDispositivosStore()
 
     // Estado da UI
     const activeTab = ref('localizacoes')
     const showModal = ref(false)
     const isEditing = ref(false)
     const localizacaoEditando = ref(null)
+    const chipId = ref('')
+    const showVincular = ref(false)
+    const showDispositivoLocalizacaoModal = ref(false)
+    const dispositivoEditando = ref(null)
+    const localizacaoDispositivoEditando = ref(null)
+    const isEditingDispositivoLocalizacao = ref(false)
 
     // Carregar localizações ao montar o componente
     onMounted(async () => {
       await localizacoesStore.listarLocalizacoes()
+      await dispositivosStore.listarDispositivos()
+      await dispositivosStore.listarLocalizacoesDispositivos()
     })
 
     // Função de logout
@@ -268,6 +427,61 @@ export default {
       }
     }
 
+    // Vincular dispositivo
+    const handleVincular = async () => {
+      if (!chipId.value.trim()) return
+      const result = await dispositivosStore.vincularDispositivo(chipId.value.trim())
+      if (result.success) {
+        chipId.value = ''
+        await dispositivosStore.listarDispositivos()
+        showVincular.value = false
+        // Abrir modal para cadastrar localização do dispositivo
+        dispositivoEditando.value = result.data
+        isEditingDispositivoLocalizacao.value = false
+        localizacaoDispositivoEditando.value = null
+        showDispositivoLocalizacaoModal.value = true
+      }
+    }
+
+    const cancelarVinculo = () => {
+      chipId.value = ''
+      showVincular.value = false
+      dispositivosStore.clearError()
+    }
+
+    // Editar localização do dispositivo
+    const editarLocalizacaoDispositivo = (dispositivo) => {
+      dispositivoEditando.value = dispositivo
+      isEditingDispositivoLocalizacao.value = true
+      // Simular dados da localização do dispositivo (você pode ajustar conforme sua API)
+      localizacaoDispositivoEditando.value = {
+        codigoPublicoLocalizacaoDoDispositivo: dispositivo.codigoPublicoLocalizacaoDoDispositivo || 'temp-id',
+        codigoPublicoLocalizacao: dispositivo.codigoPublicoLocalizacao || '',
+        nomeDaLocalizacaoDoDispositivo: dispositivo.nomeDaLocalizacaoDoDispositivo || ''
+      }
+      showDispositivoLocalizacaoModal.value = true
+    }
+
+    // Fechar modal de localização do dispositivo
+    const fecharDispositivoLocalizacaoModal = () => {
+      showDispositivoLocalizacaoModal.value = false
+      dispositivoEditando.value = null
+      localizacaoDispositivoEditando.value = null
+      isEditingDispositivoLocalizacao.value = false
+      dispositivosStore.clearError()
+    }
+
+    // Salvar localização do dispositivo
+    const salvarLocalizacaoDispositivo = async (dadosLocalizacao) => {
+      // O modal já chama a API apropriada baseada na escolha do usuário
+      // Aqui apenas fechamos o modal e recarregamos os dados
+      fecharDispositivoLocalizacaoModal()
+      
+      // Recarregar as listas
+      await dispositivosStore.listarDispositivos()
+      await dispositivosStore.listarLocalizacoesDispositivos()
+    }
+
     return {
       activeTab,
       showModal,
@@ -275,11 +489,23 @@ export default {
       localizacaoEditando,
       authStore,
       localizacoesStore,
+      dispositivosStore,
       handleLogout,
       abrirModalNovaLocalizacao,
       editarLocalizacao,
       fecharModal,
-      salvarLocalizacao
+      salvarLocalizacao,
+      chipId,
+      handleVincular,
+      showVincular,
+      cancelarVinculo,
+      showDispositivoLocalizacaoModal,
+      dispositivoEditando,
+      localizacaoDispositivoEditando,
+      isEditingDispositivoLocalizacao,
+      editarLocalizacaoDispositivo,
+      fecharDispositivoLocalizacaoModal,
+      salvarLocalizacaoDispositivo
     }
   }
 }
@@ -493,6 +719,70 @@ export default {
 
 .btn-icon {
   font-size: 1.1rem;
+}
+
+/* Modal de Chip ID */
+.chip-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.chip-modal-container {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(15, 15, 35, 0.98);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.chip-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.25);
+}
+
+.chip-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.chip-modal-form {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chip-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+@media (max-width: 480px) {
+  .chip-modal-container {
+    max-width: 100%;
+  }
 }
 
 /* Estados de loading e vazio */
