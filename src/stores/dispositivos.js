@@ -5,25 +5,30 @@ import API_CONFIG from '../config/api'
 export const useDispositivosStore = defineStore('dispositivos', {
   state: () => ({
     dispositivos: [],
-    localizacoesDispositivos: [],
     isLoading: false,
-    error: null
+    error: null,
+    currentDispositivo: null
   }),
 
   getters: {
     hasError: (state) => !!state.error,
     totalDispositivos: (state) => state.dispositivos.length,
-    totalLocalizacoesDispositivos: (state) => state.localizacoesDispositivos.length
+    dispositivosComLocalizacao: (state) => state.dispositivos.filter(disp => disp.nomeDaLocalizacaoDoDispositivo),
+    dispositivosSemLocalizacao: (state) => state.dispositivos.filter(disp => !disp.nomeDaLocalizacaoDoDispositivo)
   },
 
   actions: {
+    // Listar todos os dispositivos
     async listarDispositivos() {
       this.isLoading = true
       this.error = null
 
       try {
-        const response = await apiClient.get(API_CONFIG.ENDPOINTS.DISPOSITIVO.LISTAR)
-        this.dispositivos = Array.isArray(response.data) ? response.data : []
+        const response = await apiClient.get(
+          API_CONFIG.ENDPOINTS.DISPOSITIVO.LISTAR
+        )
+
+        this.dispositivos = response.data || []
         return { success: true, data: this.dispositivos }
       } catch (error) {
         this.error = error.response?.data?.message || 'Erro ao carregar dispositivos'
@@ -33,84 +38,46 @@ export const useDispositivosStore = defineStore('dispositivos', {
       }
     },
 
-    async vincularDispositivo(chipId) {
-      this.isLoading = true
-      this.error = null
-
-      try {
-        const response = await apiClient.post(
-          API_CONFIG.ENDPOINTS.DISPOSITIVO.VINCULAR,
-          { chipId }
-        )
-        // Alguns endpoints retornam o dispositivo criado/vinculado
-        if (response.data) {
-          this.dispositivos.push(response.data)
-        }
-        return { success: true, data: response.data }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erro ao vincular dispositivo'
-        return { success: false, error: this.error }
-      } finally {
-        this.isLoading = false
-      }
+    // Buscar dispositivo por código público
+    buscarDispositivoPorCodigo(codigoPublico) {
+      return this.dispositivos.find(disp => disp.codigoPublicoDispositivo === codigoPublico)
     },
 
-    async cadastrarLocalizacaoDispositivo(dadosLocalizacao) {
-      this.isLoading = true
-      this.error = null
-
-      try {
-        const response = await apiClient.post(
-          API_CONFIG.ENDPOINTS.LOCALIZACAO_DISPOSITIVO.CADASTRAR,
-          dadosLocalizacao
-        )
-        return { success: true, data: response.data }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erro ao cadastrar localização do dispositivo'
-        return { success: false, error: this.error }
-      } finally {
-        this.isLoading = false
-      }
+    // Definir dispositivo atual
+    setCurrentDispositivo(dispositivo) {
+      this.currentDispositivo = dispositivo
     },
 
-    async editarLocalizacaoDispositivo(dadosLocalizacao) {
-      this.isLoading = true
-      this.error = null
-
-      try {
-        const response = await apiClient.post(
-          API_CONFIG.ENDPOINTS.LOCALIZACAO_DISPOSITIVO.EDITAR,
-          dadosLocalizacao
-        )
-        return { success: true, data: response.data }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erro ao editar localização do dispositivo'
-        return { success: false, error: this.error }
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async listarLocalizacoesDispositivos() {
-      this.isLoading = true
-      this.error = null
-
-      try {
-        const response = await apiClient.get(API_CONFIG.ENDPOINTS.LOCALIZACAO_DISPOSITIVO.LISTAR)
-        this.localizacoesDispositivos = Array.isArray(response.data) ? response.data : []
-        return { success: true, data: this.localizacoesDispositivos }
-      } catch (error) {
-        this.error = error.response?.data?.message || 'Erro ao carregar localizações dos dispositivos'
-        return { success: false, error: this.error }
-      } finally {
-        this.isLoading = false
-      }
-    },
-
+    // Limpar erro
     clearError() {
       this.error = null
+    },
+
+    // Limpar dispositivo atual
+    clearCurrentDispositivo() {
+      this.currentDispositivo = null
+    },
+
+    // Filtrar dispositivos por localização
+    filtrarDispositivosPorLocalizacao(nomeLocalizacao) {
+      if (!nomeLocalizacao) return this.dispositivos
+      return this.dispositivos.filter(disp => 
+        disp.nomeDaLocalizacaoDoDispositivo === nomeLocalizacao
+      )
+    },
+
+    // Obter estatísticas dos dispositivos
+    getEstatisticas() {
+      const total = this.dispositivos.length
+      const comLocalizacao = this.dispositivosComLocalizacao.length
+      const semLocalizacao = this.dispositivosSemLocalizacao.length
+      
+      return {
+        total,
+        comLocalizacao,
+        semLocalizacao,
+        percentualComLocalizacao: total > 0 ? Math.round((comLocalizacao / total) * 100) : 0
+      }
     }
   }
 })
-
-

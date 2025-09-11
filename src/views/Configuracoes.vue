@@ -37,6 +37,16 @@
               </li>
               <li class="nav-item">
                 <button 
+                  @click="activeTab = 'dispositivos'"
+                  :class="{ 'active': activeTab === 'dispositivos' }"
+                  class="nav-button"
+                >
+                  <span class="nav-icon">📱</span>
+                  Dispositivos
+                </button>
+              </li>
+              <li class="nav-item">
+                <button 
                   @click="activeTab = 'usuarios'"
                   :class="{ 'active': activeTab === 'usuarios' }"
                   class="nav-button"
@@ -286,6 +296,80 @@
             </div>
           </div>
 
+          <!-- Painel de Dispositivos -->
+          <div v-else-if="activeTab === 'dispositivos'" class="panel-content">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <span class="title-icon">📱</span>
+                Gerenciar Dispositivos
+              </h2>
+              <button @click="recarregarDispositivos" class="btn-primary">
+                <span class="btn-icon">🔄</span>
+                Atualizar Lista
+              </button>
+            </div>
+
+            <!-- Lista de dispositivos -->
+            <div class="dispositivos-container">
+              <div v-if="dispositivosStore.isLoading" class="loading-container">
+                <div class="loading-spinner">
+                  <div class="spinner"></div>
+                  <span>Carregando dispositivos...</span>
+                </div>
+              </div>
+
+              <div v-else-if="dispositivosStore.dispositivos.length === 0" class="empty-state">
+                <div class="empty-icon">📱</div>
+                <h3>Nenhum dispositivo encontrado</h3>
+                <p>Não há dispositivos cadastrados no sistema</p>
+              </div>
+
+              <div v-else class="dispositivos-grid">
+                <div 
+                  v-for="dispositivo in dispositivosStore.dispositivos" 
+                  :key="dispositivo.codigoPublicoDispositivo"
+                  class="dispositivo-card"
+                >
+                  <div class="card-header">
+                    <h3 class="dispositivo-nome">{{ dispositivo.nomeDoDispositivo }}</h3>
+                    <div class="card-actions">
+                      <span class="modelo-badge">{{ dispositivo.modeloDispositivo }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="card-body">
+                    <div class="dispositivo-info">
+                      <div class="info-item">
+                        <span class="info-label">Modelo:</span>
+                        <span class="info-value">{{ dispositivo.modeloDispositivo }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">Versão:</span>
+                        <span class="info-value">{{ dispositivo.versaoDoDispositivo }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">Localização:</span>
+                        <span class="info-value">
+                          {{ dispositivo.nomeDaLocalizacaoDoDispositivo || 'Não vinculado' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card-footer">
+                    <div class="codigo-info">
+                      <span class="codigo-label">Código:</span>
+                      <code class="codigo-value">{{ dispositivo.codigoPublicoDispositivo }}</code>
+                    </div>
+                    <div class="status-badge" :class="{ 'vinculado': dispositivo.nomeDaLocalizacaoDoDispositivo }">
+                      {{ dispositivo.nomeDaLocalizacaoDoDispositivo ? 'Vinculado' : 'Não vinculado' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Outros painéis (placeholder) -->
           <div v-else-if="activeTab === 'usuarios'" class="panel-content">
             <div class="panel-header">
@@ -427,6 +511,11 @@ export default {
       }
     }
 
+    // Recarregar dispositivos
+    const recarregarDispositivos = async () => {
+      await dispositivosStore.listarDispositivos()
+    }
+
     // Vincular dispositivo
     const handleVincular = async () => {
       if (!chipId.value.trim()) return
@@ -495,6 +584,7 @@ export default {
       editarLocalizacao,
       fecharModal,
       salvarLocalizacao,
+      recarregarDispositivos,
       chipId,
       handleVincular,
       showVincular,
@@ -840,6 +930,13 @@ export default {
   gap: 25px;
 }
 
+/* Grid de dispositivos */
+.dispositivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+}
+
 .localizacao-card {
   background: rgba(26, 26, 62, 0.8);
   border: 1px solid rgba(0, 212, 255, 0.3);
@@ -935,6 +1032,68 @@ export default {
   background: rgba(0, 212, 255, 0.2);
   color: #00d4ff;
   border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.status-badge.vinculado {
+  background: rgba(0, 212, 255, 0.2);
+  color: #00d4ff;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+/* Cards de dispositivos */
+.dispositivo-card {
+  background: rgba(26, 26, 62, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.dispositivo-card:hover {
+  transform: translateY(-3px);
+  border-color: #00d4ff;
+  box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
+}
+
+.dispositivo-nome {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modelo-badge {
+  background: rgba(124, 58, 237, 0.2);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.dispositivo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.info-item {
+  display: flex;
+  gap: 8px;
+}
+
+.info-label {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #ffffff;
+  font-size: 0.9rem;
 }
 
 .codigo-info {
