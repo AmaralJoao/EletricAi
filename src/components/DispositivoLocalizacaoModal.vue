@@ -184,6 +184,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useDispositivosStore } from '../stores/dispositivos'
 import { useLocalizacoesStore } from '../stores/localizacoes'
+import { useLocalizacaoDispositivoStore } from '../stores/localizacaoDispositivo'
 
 export default {
   name: 'DispositivoLocalizacaoModal',
@@ -205,6 +206,7 @@ export default {
   setup(props, { emit }) {
     const dispositivosStore = useDispositivosStore()
     const localizacoesStore = useLocalizacoesStore()
+    const localizacaoDispositivoStore = useLocalizacaoDispositivoStore()
     const isEditingComputed = computed(() => props.isEditing)
 
     // Estado do formulário
@@ -223,7 +225,7 @@ export default {
     
     // Localizações de dispositivos disponíveis (todas, sem filtro)
     const localizacoesDispositivosDisponiveis = computed(() => {
-      return dispositivosStore.localizacoesDispositivos
+      return localizacaoDispositivoStore.localizacoesDispositivos
     })
 
     // Inicializar formulário
@@ -254,7 +256,7 @@ export default {
       
       // CASO 2: Se selecionou "usar localização existente", carregar as localizações de dispositivos
       if (form.tipoLocalizacao === 'existente') {
-        await dispositivosStore.listarLocalizacoesDispositivos()
+        await localizacaoDispositivoStore.listarLocalizacoesDispositivos()
       }
     }
 
@@ -324,7 +326,7 @@ export default {
         }
         
         // Chamar endpoint de edição
-        const result = await dispositivosStore.editarLocalizacaoDispositivo(dadosLocalizacao)
+        const result = await localizacaoDispositivoStore.editarLocalizacaoDispositivo(dadosLocalizacao)
         if (result.success) {
           emit('save', result.data)
         }
@@ -339,7 +341,7 @@ export default {
           }
           
           // Chamar endpoint de criação
-          const result = await dispositivosStore.cadastrarLocalizacaoDispositivo(dadosLocalizacao)
+          const result = await localizacaoDispositivoStore.cadastrarLocalizacaoDispositivo(dadosLocalizacao)
           if (result.success) {
             emit('save', result.data)
           }
@@ -364,7 +366,7 @@ export default {
       inicializarFormulario()
       // Carregar localizações de dispositivos apenas se necessário
       if (form.tipoLocalizacao === 'existente') {
-        await dispositivosStore.listarLocalizacoesDispositivos()
+        await localizacaoDispositivoStore.listarLocalizacoesDispositivos()
       }
     })
 

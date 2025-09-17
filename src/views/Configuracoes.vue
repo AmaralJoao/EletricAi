@@ -3,7 +3,7 @@
     <header class="configuracoes-header">
       <div class="header-content">
         <div class="logo-section">
-          <div class="electric-logo">
+          <div class="electric-logo" @click="irParaDashboard">
             <span class="bolt-icon">⚡</span>
             <h1 class="app-title">ELETRIC AI</h1>
           </div>
@@ -41,8 +41,18 @@
                   :class="{ 'active': activeTab === 'dispositivos' }"
                   class="nav-button"
                 >
-                  <span class="nav-icon">📱</span>
-                  Dispositivos
+                  <span class="nav-icon">🔌</span>
+                  Meus Dispositivos
+                </button>
+              </li>
+              <li class="nav-item">
+                <button 
+                  @click="activeTab = 'localizacao-dispositivos'"
+                  :class="{ 'active': activeTab === 'localizacao-dispositivos' }"
+                  class="nav-button"
+                >
+                  <span class="nav-icon">📍</span>
+                  Localizações Dispositivos
                 </button>
               </li>
               <li class="nav-item">
@@ -63,16 +73,6 @@
                 >
                   <span class="nav-icon">⚙️</span>
                   Sistema
-                </button>
-              </li>
-              <li class="nav-item">
-                <button 
-                  @click="activeTab = 'dispositivos'"
-                  :class="{ 'active': activeTab === 'dispositivos' }"
-                  class="nav-button"
-                >
-                  <span class="nav-icon">🔌</span>
-                  Meus Dispositivos
                 </button>
               </li>
             </ul>
@@ -176,137 +176,63 @@
                 <span class="title-icon">🔌</span>
                 Meus Dispositivos
               </h2>
-              <div class="panel-actions" v-if="!showVincular">
+              <div class="panel-actions">
                 <button class="btn-primary" @click="showVincular = true">
                   <span class="btn-icon">➕</span>
-                  Novo Dispositivo
+                  Vincular Dispositivo
+                </button>
+                <button class="btn-secondary" @click="recarregarDispositivos">
+                  <span class="btn-icon">🔄</span>
+                  Atualizar
                 </button>
               </div>
             </div>
 
-            <div class="dispositivos-actions">
-              <!-- Modal de vinculação de Chip ID -->
-              <div v-if="showVincular" class="chip-modal-overlay" @click="cancelarVinculo">
-                <div class="chip-modal-container" @click.stop>
-                  <div class="chip-modal-header">
-                    <h3 class="chip-modal-title">
-                      <span class="title-icon">🔗</span>
-                      Vincular Dispositivo
-                    </h3>
-                    <button @click="cancelarVinculo" class="close-button">
-                      <span class="close-icon">✕</span>
+            <!-- Modal de vinculação de Chip ID -->
+            <div v-if="showVincular" class="chip-modal-overlay" @click="cancelarVinculo">
+              <div class="chip-modal-container" @click.stop>
+                <div class="chip-modal-header">
+                  <h3 class="chip-modal-title">
+                    <span class="title-icon">🔗</span>
+                    Vincular Dispositivo
+                  </h3>
+                  <button @click="cancelarVinculo" class="close-button">
+                    <span class="close-icon">✕</span>
+                  </button>
+                </div>
+                <form @submit.prevent="handleVincular" class="chip-modal-form">
+                  <label class="form-label" for="chipIdInput">
+                    <span class="label-icon">🧩</span>
+                    Chip ID
+                  </label>
+                  <div class="input-container">
+                    <input
+                      id="chipIdInput"
+                      v-model="chipId"
+                      type="text"
+                      placeholder="Informe o Chip ID"
+                      class="form-input"
+                      required
+                      autofocus
+                    />
+                    <div class="input-glow"></div>
+                  </div>
+                  <div class="chip-modal-actions">
+                    <button type="button" class="btn-secondary" @click="cancelarVinculo" :disabled="dispositivosStore.isLoading">
+                      Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary" :disabled="dispositivosStore.isLoading">
+                      Vincular
                     </button>
                   </div>
-                  <form @submit.prevent="handleVincular" class="chip-modal-form">
-                    <label class="form-label" for="chipIdInput">
-                      <span class="label-icon">🧩</span>
-                      Chip ID
-                    </label>
-                    <div class="input-container">
-                      <input
-                        id="chipIdInput"
-                        v-model="chipId"
-                        type="text"
-                        placeholder="Informe o Chip ID"
-                        class="form-input"
-                        required
-                        autofocus
-                      />
-                      <div class="input-glow"></div>
-                    </div>
-                    <div class="chip-modal-actions">
-                      <button type="button" class="btn-secondary" @click="cancelarVinculo" :disabled="dispositivosStore.isLoading">
-                        Cancelar
-                      </button>
-                      <button type="submit" class="btn-primary" :disabled="dispositivosStore.isLoading">
-                        Vincular
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-
-              <div v-if="dispositivosStore.hasError" class="error-alert">
-                <div class="error-icon">⚠️</div>
-                <span>{{ dispositivosStore.error }}</span>
+                </form>
               </div>
             </div>
 
-            <div class="localizacoes-container">
-              <div v-if="dispositivosStore.isLoading" class="loading-container">
-                <div class="loading-spinner">
-                  <div class="spinner"></div>
-                  <span>Carregando dispositivos...</span>
-                </div>
-              </div>
-
-              <div v-else-if="dispositivosStore.dispositivos.length === 0" class="empty-state">
-                <div class="empty-icon">🔌</div>
-                <h3>Nenhum dispositivo encontrado</h3>
-                <p>Vincule seu primeiro dispositivo usando o Chip ID</p>
-              </div>
-
-              <div v-else class="localizacoes-grid">
-                <div 
-                  v-for="(disp, idx) in dispositivosStore.dispositivos" 
-                  :key="disp.nomeDoDispositivo || idx"
-                  class="localizacao-card"
-                >
-                  <div class="card-header">
-                    <h3 class="localizacao-nome">{{ disp.nomeDoDispositivo }}</h3>
-                    <div class="card-actions">
-                      <button 
-                        @click="editarLocalizacaoDispositivo(disp)"
-                        class="btn-edit"
-                        title="Editar localização do dispositivo"
-                      >
-                        ✏️
-                      </button>
-                    </div>
-                  </div>
-                  <div class="card-body">
-                    <div class="endereco-info">
-                      <div class="endereco-item">
-                        <span class="endereco-label">Modelo:</span>
-                        <span class="endereco-value">{{ disp.modeloDispositivo }}</span>
-                      </div>
-                      <div class="endereco-item">
-                        <span class="endereco-label">Versão:</span>
-                        <span class="endereco-value">{{ disp.versaoDoDispositivo }}</span>
-                      </div>
-                      <div class="endereco-item" v-if="disp.nomeDaLocalizacaoDoDispositivo">
-                        <span class="endereco-label">Localização:</span>
-                        <span class="endereco-value">{{ disp.nomeDaLocalizacaoDoDispositivo }}</span>
-                      </div>
-                      <div class="endereco-item">
-                        <span class="endereco-label">Endereço:</span>
-                        <span class="endereco-value">
-                          {{ disp.nomeDaRua }}, {{ disp.numero }}
-                          <template v-if="disp.complemento"> - {{ disp.complemento }}</template>
-                        </span>
-                      </div>
-                      <div class="endereco-item">
-                        <span class="endereco-label">Cidade:</span>
-                        <span class="endereco-value">{{ disp.cidade }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Painel de Dispositivos -->
-          <div v-else-if="activeTab === 'dispositivos'" class="panel-content">
-            <div class="panel-header">
-              <h2 class="panel-title">
-                <span class="title-icon">📱</span>
-                Gerenciar Dispositivos
-              </h2>
-              <button @click="recarregarDispositivos" class="btn-primary">
-                <span class="btn-icon">🔄</span>
-                Atualizar Lista
-              </button>
+            <!-- Alerta de erro -->
+            <div v-if="dispositivosStore.hasError" class="error-alert">
+              <div class="error-icon">⚠️</div>
+              <span>{{ dispositivosStore.error }}</span>
             </div>
 
             <!-- Lista de dispositivos -->
@@ -319,9 +245,13 @@
               </div>
 
               <div v-else-if="dispositivosStore.dispositivos.length === 0" class="empty-state">
-                <div class="empty-icon">📱</div>
+                <div class="empty-icon">🔌</div>
                 <h3>Nenhum dispositivo encontrado</h3>
-                <p>Não há dispositivos cadastrados no sistema</p>
+                <p>Vincule seu primeiro dispositivo usando o Chip ID</p>
+                <button @click="showVincular = true" class="btn-primary">
+                  <span class="btn-icon">➕</span>
+                  Vincular Primeiro Dispositivo
+                </button>
               </div>
 
               <div v-else class="dispositivos-grid">
@@ -353,6 +283,17 @@
                           {{ dispositivo.nomeDaLocalizacaoDoDispositivo || 'Não vinculado' }}
                         </span>
                       </div>
+                      <div v-if="dispositivo.nomeDaRua" class="info-item">
+                        <span class="info-label">Endereço:</span>
+                        <span class="info-value">
+                          {{ dispositivo.nomeDaRua }}, {{ dispositivo.numero }}
+                          <template v-if="dispositivo.complemento"> - {{ dispositivo.complemento }}</template>
+                        </span>
+                      </div>
+                      <div v-if="dispositivo.cidade" class="info-item">
+                        <span class="info-label">Cidade:</span>
+                        <span class="info-value">{{ dispositivo.cidade }}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -363,6 +304,113 @@
                     </div>
                     <div class="status-badge" :class="{ 'vinculado': dispositivo.nomeDaLocalizacaoDoDispositivo }">
                       {{ dispositivo.nomeDaLocalizacaoDoDispositivo ? 'Vinculado' : 'Não vinculado' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Painel de Localizações de Dispositivos -->
+          <div v-else-if="activeTab === 'localizacao-dispositivos'" class="panel-content">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <span class="title-icon">📍</span>
+                Localizações dos Dispositivos
+              </h2>
+              <div class="panel-actions">
+                <button class="btn-primary" @click="abrirModalNovaLocalizacaoDispositivo">
+                  <span class="btn-icon">➕</span>
+                  Nova Localização
+                </button>
+                <button class="btn-secondary" @click="recarregarLocalizacoesDispositivos">
+                  <span class="btn-icon">🔄</span>
+                  Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- Alerta de erro -->
+            <div v-if="localizacaoDispositivoStore.hasError" class="error-alert">
+              <div class="error-icon">⚠️</div>
+              <span>{{ localizacaoDispositivoStore.error }}</span>
+            </div>
+
+            <!-- Lista de localizações de dispositivos -->
+            <div class="localizacoes-container">
+              <div v-if="localizacaoDispositivoStore.isLoading" class="loading-container">
+                <div class="loading-spinner">
+                  <div class="spinner"></div>
+                  <span>Carregando localizações...</span>
+                </div>
+              </div>
+
+              <div v-else-if="localizacaoDispositivoStore.localizacoesDispositivos.length === 0" class="empty-state">
+                <div class="empty-icon">📍</div>
+                <h3>Nenhuma localização encontrada</h3>
+                <p>Crie sua primeira localização para um dispositivo</p>
+                <button @click="abrirModalNovaLocalizacaoDispositivo" class="btn-primary">
+                  <span class="btn-icon">➕</span>
+                  Criar Primeira Localização
+                </button>
+              </div>
+
+              <div v-else class="localizacoes-grid">
+                <div 
+                  v-for="localizacao in localizacaoDispositivoStore.localizacoesDispositivos" 
+                  :key="localizacao.codigoPublicoDispositivo"
+                  class="localizacao-card"
+                >
+                  <div class="card-header">
+                    <h3 class="localizacao-nome">
+                      {{ localizacao.nomeDaLocalizacaoDoDispositivo || 'Sem nome' }}
+                    </h3>
+                    <div class="card-actions">
+                      <button 
+                        @click="editarLocalizacaoDispositivoNova(localizacao)"
+                        class="btn-edit"
+                        title="Editar localização"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="card-body">
+                    <div class="endereco-info">
+                      <div class="endereco-item">
+                        <span class="endereco-label">Dispositivo:</span>
+                        <span class="endereco-value">{{ localizacao.nomeDoDispositivo }}</span>
+                      </div>
+                      <div class="endereco-item">
+                        <span class="endereco-label">Modelo:</span>
+                        <span class="endereco-value">{{ localizacao.modeloDispositivo }}</span>
+                      </div>
+                      <div class="endereco-item">
+                        <span class="endereco-label">Versão:</span>
+                        <span class="endereco-value">{{ localizacao.versaoDoDispositivo }}</span>
+                      </div>
+                      <div v-if="localizacao.cidade" class="endereco-item">
+                        <span class="endereco-label">Cidade:</span>
+                        <span class="endereco-value">{{ localizacao.cidade }}</span>
+                      </div>
+                      <div v-if="localizacao.nomeDaRua" class="endereco-item">
+                        <span class="endereco-label">Endereço:</span>
+                        <span class="endereco-value">
+                          {{ localizacao.nomeDaRua }}, {{ localizacao.numero }}
+                          <template v-if="localizacao.complemento"> - {{ localizacao.complemento }}</template>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card-footer">
+                    <div class="status-badge" :class="{ 'active': localizacao.nomeDaLocalizacaoDoDispositivo }">
+                      {{ localizacao.nomeDaLocalizacaoDoDispositivo ? 'Configurado' : 'Não configurado' }}
+                    </div>
+                    <div v-if="localizacao.codigoPublicoDispositivo" class="codigo-info">
+                      <span class="codigo-label">Código:</span>
+                      <code class="codigo-value">{{ localizacao.codigoPublicoDispositivo }}</code>
                     </div>
                   </div>
                 </div>
@@ -420,6 +468,15 @@
       @close="fecharDispositivoLocalizacaoModal"
       @save="salvarLocalizacaoDispositivo"
     />
+
+    <!-- Modal para Localização de Dispositivo -->
+    <LocalizacaoDispositivoModal 
+      v-if="showLocalizacaoDispositivoModal"
+      :localizacaoDispositivo="localizacaoDispositivoEditandoModal"
+      :isEditing="isEditingLocalizacaoDispositivo"
+      @close="fecharLocalizacaoDispositivoModal"
+      @save="salvarLocalizacaoDispositivoModal"
+    />
   </div>
 </template>
 
@@ -429,20 +486,24 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useLocalizacoesStore } from '../stores/localizacoes'
 import { useDispositivosStore } from '../stores/dispositivos'
+import { useLocalizacaoDispositivoStore } from '../stores/localizacaoDispositivo'
 import LocalizacaoModal from '../components/LocalizacaoModal.vue'
 import DispositivoLocalizacaoModal from '../components/DispositivoLocalizacaoModal.vue'
+import LocalizacaoDispositivoModal from '../components/LocalizacaoDispositivoModal.vue'
 
 export default {
   name: 'Configuracoes',
   components: {
     LocalizacaoModal,
-    DispositivoLocalizacaoModal
+    DispositivoLocalizacaoModal,
+    LocalizacaoDispositivoModal
   },
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
     const localizacoesStore = useLocalizacoesStore()
     const dispositivosStore = useDispositivosStore()
+    const localizacaoDispositivoStore = useLocalizacaoDispositivoStore()
 
     // Estado da UI
     const activeTab = ref('localizacoes')
@@ -455,18 +516,26 @@ export default {
     const dispositivoEditando = ref(null)
     const localizacaoDispositivoEditando = ref(null)
     const isEditingDispositivoLocalizacao = ref(false)
+    const showLocalizacaoDispositivoModal = ref(false)
+    const localizacaoDispositivoEditandoModal = ref(null)
+    const isEditingLocalizacaoDispositivo = ref(false)
 
     // Carregar localizações ao montar o componente
     onMounted(async () => {
       await localizacoesStore.listarLocalizacoes()
       await dispositivosStore.listarDispositivos()
-      await dispositivosStore.listarLocalizacoesDispositivos()
+      await localizacaoDispositivoStore.listarLocalizacoesDispositivos()
     })
 
     // Função de logout
     const handleLogout = () => {
       authStore.logout()
       router.push('/login')
+    }
+
+    // Ir para dashboard (tela inicial)
+    const irParaDashboard = () => {
+      router.push('/')
     }
 
     // Abrir modal para nova localização
@@ -522,8 +591,9 @@ export default {
       const result = await dispositivosStore.vincularDispositivo(chipId.value.trim())
       if (result.success) {
         chipId.value = ''
-        await dispositivosStore.listarDispositivos()
         showVincular.value = false
+        // Recarregar a lista de dispositivos
+        await dispositivosStore.listarDispositivos()
         // Abrir modal para cadastrar localização do dispositivo
         dispositivoEditando.value = result.data
         isEditingDispositivoLocalizacao.value = false
@@ -566,9 +636,41 @@ export default {
       // Aqui apenas fechamos o modal e recarregamos os dados
       fecharDispositivoLocalizacaoModal()
       
-      // Recarregar as listas
+      // Recarregar apenas a lista de dispositivos
       await dispositivosStore.listarDispositivos()
-      await dispositivosStore.listarLocalizacoesDispositivos()
+    }
+
+    // Recarregar localizações de dispositivos
+    const recarregarLocalizacoesDispositivos = async () => {
+      await localizacaoDispositivoStore.listarLocalizacoesDispositivos()
+    }
+
+    // Abrir modal para nova localização de dispositivo
+    const abrirModalNovaLocalizacaoDispositivo = () => {
+      isEditingLocalizacaoDispositivo.value = false
+      localizacaoDispositivoEditandoModal.value = null
+      showLocalizacaoDispositivoModal.value = true
+    }
+
+    // Editar localização de dispositivo (nova aba)
+    const editarLocalizacaoDispositivoNova = (localizacao) => {
+      isEditingLocalizacaoDispositivo.value = true
+      localizacaoDispositivoEditandoModal.value = { ...localizacao }
+      showLocalizacaoDispositivoModal.value = true
+    }
+
+    // Fechar modal de localização de dispositivo
+    const fecharLocalizacaoDispositivoModal = () => {
+      showLocalizacaoDispositivoModal.value = false
+      localizacaoDispositivoEditandoModal.value = null
+      isEditingLocalizacaoDispositivo.value = false
+      localizacaoDispositivoStore.clearError()
+    }
+
+    // Salvar localização de dispositivo
+    const salvarLocalizacaoDispositivoModal = async (dados) => {
+      fecharLocalizacaoDispositivoModal()
+      await localizacaoDispositivoStore.listarLocalizacoesDispositivos()
     }
 
     return {
@@ -580,6 +682,7 @@ export default {
       localizacoesStore,
       dispositivosStore,
       handleLogout,
+      irParaDashboard,
       abrirModalNovaLocalizacao,
       editarLocalizacao,
       fecharModal,
@@ -595,7 +698,16 @@ export default {
       isEditingDispositivoLocalizacao,
       editarLocalizacaoDispositivo,
       fecharDispositivoLocalizacaoModal,
-      salvarLocalizacaoDispositivo
+      salvarLocalizacaoDispositivo,
+      localizacaoDispositivoStore,
+      recarregarLocalizacoesDispositivos,
+      abrirModalNovaLocalizacaoDispositivo,
+      editarLocalizacaoDispositivoNova,
+      showLocalizacaoDispositivoModal,
+      localizacaoDispositivoEditandoModal,
+      isEditingLocalizacaoDispositivo,
+      fecharLocalizacaoDispositivoModal,
+      salvarLocalizacaoDispositivoModal
     }
   }
 }
@@ -633,6 +745,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.electric-logo:hover {
+  background: rgba(0, 212, 255, 0.1);
+  transform: scale(1.05);
 }
 
 .bolt-icon {
@@ -807,8 +928,51 @@ export default {
   box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
 }
 
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
+  padding: 12px 20px;
+  color: #7c3aed;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(124, 58, 237, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+}
+
 .btn-icon {
   font-size: 1.1rem;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Alerta de erro */
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  color: #ff4757;
+}
+
+.error-icon {
+  font-size: 1.2rem;
 }
 
 /* Modal de Chip ID */

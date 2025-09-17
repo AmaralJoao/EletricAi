@@ -3,7 +3,7 @@
     <header class="dashboard-header">
       <div class="header-content">
         <div class="logo-section">
-          <div class="electric-logo">
+          <div class="electric-logo" @click="irParaDashboard">
             <span class="bolt-icon">⚡</span>
             <h1 class="app-title">ELETRIC AI</h1>
           </div>
@@ -41,6 +41,7 @@
             </div>
           </div>
         </div>
+
 
         <div class="features-grid">
           <div class="feature-card">
@@ -93,6 +94,11 @@ export default {
       router.push('/login')
     }
 
+    // Ir para dashboard (tela inicial)
+    const irParaDashboard = () => {
+      router.push('/')
+    }
+
     // Ir para configurações
     const irParaConfiguracoes = () => {
       router.push('/configuracoes')
@@ -102,6 +108,7 @@ export default {
       authStore,
       maskedToken,
       handleLogout,
+      irParaDashboard,
       irParaConfiguracoes
     }
   }
@@ -140,6 +147,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.electric-logo:hover {
+  background: rgba(0, 212, 255, 0.1);
+  transform: scale(1.05);
 }
 
 .bolt-icon {
@@ -317,6 +333,7 @@ export default {
   line-height: 1.5;
 }
 
+
 /* Responsividade */
 @media (max-width: 768px) {
   .header-content {
@@ -339,5 +356,33 @@ export default {
   .features-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Animações */
+@keyframes electric-glow {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.1);
+  }
+}
+
+@keyframes electric-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.5; 
+    transform: scale(1.2);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

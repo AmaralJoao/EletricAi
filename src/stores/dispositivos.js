@@ -18,7 +18,7 @@ export const useDispositivosStore = defineStore('dispositivos', {
   },
 
   actions: {
-    // Listar todos os dispositivos
+    // Listar dispositivos do usuário
     async listarDispositivos() {
       this.isLoading = true
       this.error = null
@@ -32,6 +32,26 @@ export const useDispositivosStore = defineStore('dispositivos', {
         return { success: true, data: this.dispositivos }
       } catch (error) {
         this.error = error.response?.data?.message || 'Erro ao carregar dispositivos'
+        return { success: false, error: this.error }
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    // Vincular dispositivo com Chip ID
+    async vincularDispositivo(chipId) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const response = await apiClient.post(
+          API_CONFIG.ENDPOINTS.DISPOSITIVO.VINCULAR,
+          { chipId }
+        )
+        
+        return { success: true, data: response.data }
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Erro ao vincular dispositivo'
         return { success: false, error: this.error }
       } finally {
         this.isLoading = false
